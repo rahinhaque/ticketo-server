@@ -1,3 +1,13 @@
+
+const { setServers } = require("dns").promises;
+
+// Use Google Public DNS and Cloudflare DNS
+setServers([
+  "8.8.8.8", // Google
+  "1.1.1.1", // Cloudflare
+]);
+
+
 const express = require("express");
 const cors = require("cors");
 const { MongoClient, ServerApiVersion } = require("mongodb");
@@ -41,7 +51,7 @@ async function run() {
 
 
     //organization api--------------------------------------------------------------------------
-    app.post("/organization", async (req, res) => {
+    app.post("/api/organization", async (req, res) => {
       const {organization, logo, website, description, organizerEmail} = req.body;
 
       const addData = {
@@ -55,6 +65,7 @@ async function run() {
       }
 
       const result = await organizationCollection.insertOne(addData);
+      console.log(result);  
       res.send(result);
     })
 
