@@ -106,6 +106,25 @@ async function run() {
       }
     });
 
+    // Event Routes api--------------------------------------------------------------------------
+    //Post Event
+    app.post("/api/events", async (req, res) => {
+
+      const data = req.body;
+      const result = await eventsCollection.insertOne({
+        ...data,
+      });
+      res.send(result);
+    });
+
+
+
+
+
+
+
+
+    // Send a ping to confirm a successful connection
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!",
     );
