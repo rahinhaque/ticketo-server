@@ -1,4 +1,3 @@
-
 const { setServers } = require("dns").promises;
 
 // Use Google Public DNS and Cloudflare DNS
@@ -6,7 +5,6 @@ setServers([
   "8.8.8.8", // Google
   "1.1.1.1", // Cloudflare
 ]);
-
 
 const express = require("express");
 const cors = require("cors");
@@ -40,7 +38,6 @@ async function run() {
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });
 
-
     //Database collections=--------------------------------------------------------------------------
     const db = client.db("ticketoDB");
     const organizationCollection = db.collection("organizations");
@@ -48,11 +45,20 @@ async function run() {
     const bookingsCollection = db.collection("bookings");
     const paymentsCollection = db.collection("payments");
 
-
-
     //organization api--------------------------------------------------------------------------
+
+    //Get All Organizations
+    app.get("/api/organizations/:email", async (req, res) => {
+      const { email } = req.params;
+      const query = { organizerEmail: email };
+      const result = await organizationCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    //Create Organization
     app.post("/api/organization", async (req, res) => {
-      const {organization, logo, website, description, organizerEmail} = req.body;
+      const { organization, logo, website, description, organizerEmail } =
+        req.body;
 
       const addData = {
         organization,
@@ -62,12 +68,11 @@ async function run() {
         organizerEmail,
         createdAt: new Date(),
         status: "active",
-      }
+      };
 
       const result = await organizationCollection.insertOne(addData);
-      console.log(result);  
       res.send(result);
-    })
+    });
 
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!",
@@ -78,12 +83,6 @@ async function run() {
   }
 }
 run().catch(console.dir);
-
-
-
-
-
-
 
 app.get("/", (req, res) => {
   res.send("Hello World!");
