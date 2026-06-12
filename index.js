@@ -1,3 +1,4 @@
+const { ObjectId } = require("mongodb");
 const { setServers } = require("dns").promises;
 
 // Use Google Public DNS and Cloudflare DNS
@@ -56,7 +57,7 @@ async function run() {
     });
 
     //Create Organization
-    app.post("/api/organization", async (req, res) => {
+    app.post("/api/organizations", async (req, res) => {
       const { organization, logo, website, description, organizerEmail } =
         req.body;
 
@@ -72,6 +73,37 @@ async function run() {
 
       const result = await organizationCollection.insertOne(addData);
       res.send(result);
+    });
+
+    //Update Organization api
+    app.patch("/api/organizations/:id", async (req, res) => {
+      try {
+        const { id } = req.params;
+        // console.log("PATCH id:", id);
+
+        const { organization, logo, website, description, organizerEmail } =
+          req.body;
+
+        const updateData = {
+          organization,
+          logo,
+          website,
+          description,
+          organizerEmail,
+          status: "active",
+        };
+
+        const result = await organizationCollection.updateOne(
+          { _id: new ObjectId(id) },
+          { $set: updateData },
+        );
+
+        // console.log(result);
+        res.send(result);
+      } catch (err) {
+        // console.error("PATCH /api/organizations/:id error:", err);
+        res.status(500).send({ error: err.message });
+      }
     });
 
     console.log(
