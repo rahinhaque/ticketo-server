@@ -107,22 +107,22 @@ async function run() {
     });
 
     // Event Routes api--------------------------------------------------------------------------
+    //Get All the events Added by the user
+    app.get("/api/events/:email", async (req, res) => {
+      const { email } = req.params;
+      const query = { organizerEmail: email };
+      const result = await eventsCollection.find(query).toArray();
+      res.send(result);
+    });
+
     //Post Event
     app.post("/api/events", async (req, res) => {
-
       const data = req.body;
       const result = await eventsCollection.insertOne({
         ...data,
       });
       res.send(result);
     });
-
-
-
-
-
-
-
 
     // Send a ping to confirm a successful connection
     console.log(
