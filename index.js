@@ -166,6 +166,14 @@ async function run() {
       }
     })
 
+    //Delete events for specific user api
+    app.delete("/api/events/:id", async (req, res) => {
+      const { id } = req.params;
+      const query = { _id: new ObjectId(id) };
+      const result = await eventsCollection.deleteOne(query);
+      res.send(result);
+    });
+
     // Send a ping to confirm a successful connection
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!",
