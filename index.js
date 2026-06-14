@@ -124,6 +124,48 @@ async function run() {
       res.send(result);
     });
 
+    //patch events api
+    app.patch("/api/events/:id", async (req, res) => {
+      try {
+        const { id } = req.params;
+        // console.log("PATCH id:", id);
+
+        // ✅ Fix — match what your frontend actually sends
+        const {
+          title,
+          description,
+          location,
+          date,
+          price,
+          seats,
+          category,
+          banner,
+        } = req.body;
+
+        const updateData = {
+          title,
+          description,
+          location,
+          date,
+          price,
+          seats,
+          category,
+          banner,
+        };
+
+        const result = await eventsCollection.updateOne(
+          { _id: new ObjectId(id) },
+          { $set: updateData },
+        );
+
+        console.log(result);
+        res.send(result);
+      } catch (err) {
+        console.error("PATCH /api/organizations/:id error:", err);
+        res.status(500).send({ error: err.message });
+      }
+    })
+
     // Send a ping to confirm a successful connection
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!",
