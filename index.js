@@ -45,6 +45,7 @@ async function run() {
     const eventsCollection = db.collection("events");
     const bookingsCollection = db.collection("bookings");
     const paymentsCollection = db.collection("payments");
+    const usersCollection = db.collection("user");
 
     //organization api--------------------------------------------------------------------------
 
@@ -131,8 +132,20 @@ async function run() {
     //Post Event
     app.post("/api/events", async (req, res) => {
       const data = req.body;
+      // console.log(data);
+      const organizer = await usersCollection.findOne({
+        email: data?.organizerEmail,
+      })
+      const organizerEventsCounts = await eventsCollection.countDocuments({organizerEmail: data?.organizerEmail})
+      // console.log(organizerEventsCounts);
+      if(!organizer?.isPremium && organizerEventsCounts >= 3){
+        res.status(403).send({message: "Your free plan plan can add only 3 events, please upgrade to premium plan."})
+      }
+
+
       const result = await eventsCollection.insertOne({
         ...data,
+        status: "pending",
       });
       res.send(result);
     });
