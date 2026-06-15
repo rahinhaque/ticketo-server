@@ -107,7 +107,20 @@ async function run() {
     });
 
     // Event Routes api--------------------------------------------------------------------------
-    //Get All the events Added by the user
+    //Get all the events
+    app.get("/api/events", async (req, res) => {
+      const result = await eventsCollection.find().toArray();
+      res.send(result);
+    })
+    //get single event
+    app.get("/api/events/:id", async (req, res) => {
+      const { id } = req.params;
+      const query = { _id: new ObjectId(id) };
+      const result = await eventsCollection.findOne(query);
+      res.send(result);
+    });
+
+    //Get the events Added by the user
     app.get("/api/events/:email", async (req, res) => {
       const { email } = req.params;
       const query = { organizerEmail: email };
