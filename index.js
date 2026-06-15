@@ -113,7 +113,7 @@ async function run() {
       res.send(result);
     })
     //get single event
-    app.get("/api/events/:id", async (req, res) => {
+    app.get("/api/single-events/:id", async (req, res) => {
       const { id } = req.params;
       const query = { _id: new ObjectId(id) };
       const result = await eventsCollection.findOne(query);
