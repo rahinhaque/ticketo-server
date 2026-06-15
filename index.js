@@ -110,9 +110,42 @@ async function run() {
     // Event Routes api--------------------------------------------------------------------------
     //Get all the events
     app.get("/api/events", async (req, res) => {
-      const result = await eventsCollection.find().toArray();
+      const search = req.query.search;
+      const category = req.query.category;
+      const price = req.query.price;
+      const location = req.query.location;
+      const query = {};
+      if (search) {
+        query.title = {
+          $regex: search,
+          $options: "i",
+        };
+      }
+      if (category) {
+        query.category = {
+          $in: category.split(","),
+        };
+      }
+
+      if (location) {
+        query.location = {
+          $regex: `^${location}$`,
+          $options: "i",
+        };
+      }
+      // sort handling
+      let sortOption = {};
+      if (req.query.sort === "price-asc") sortOption = { price: 1 };
+      if (req.query.sort === "price-desc") sortOption = { price: -1 };
+      if (req.query.sort === "date-asc") sortOption = { date: 1 };
+      if (req.query.sort === "date-desc") sortOption = { date: -1 };
+
+      const result = await eventsCollection
+        .find(query)
+        .sort(sortOption)
+        .toArray();
       res.send(result);
-    })
+    });
     //get single event
     app.get("/api/single-events/:id", async (req, res) => {
       const { id } = req.params;
@@ -138,8 +171,10 @@ async function run() {
       })
       const organizerEventsCounts = await eventsCollection.countDocuments({organizerEmail: data?.organizerEmail})
       // console.log(organizerEventsCounts);
-      if(!organizer?.isPremium && organizerEventsCounts >= 3){
-        res.status(403).send({message: "Your free plan plan can add only 3 events, please upgrade to premium plan."})
+      if (!organizer?.isPremium && organizerEventsCounts >= 3) {
+        return res
+          .status(403)
+          .send({ message: "Your free plan can add only 3 events..." });
       }
 
 
