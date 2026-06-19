@@ -253,11 +253,21 @@ async function run() {
 
     // add this near your other routes, inside run()
 
+    //Get bookings
+    app.get("/api/bookings/:email", async (req, res) => {
+      const {email} = req.params;
+      const cursor = bookingsCollection.find({ userEmail: email });
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+
     //Booking api--------------------------------------------------------------------------
     //Booking api--------------------------------------------------------------------------
     app.post("/api/bookings", async (req, res) => {
       try {
         const {
+
           eventId,
           userEmail,
           quantity,
@@ -291,6 +301,8 @@ async function run() {
 
         const booking = {
           eventId: new ObjectId(eventId),
+          eventName: eventDoc.title,
+          eventDate: eventDoc.date,
           userEmail,
           quantity: qty,
           totalPrice: totalPrice || 0,
