@@ -300,7 +300,23 @@ async function run() {
         };
 
         const result = await bookingsCollection.insertOne(booking);
-        res.send({ booking: { ...booking, _id: result.insertedId } });
+        const bookingId = result.insertedId;
+
+        // record the payment — only for paid purchases (free RSVPs have no stripeSessionId)
+        if (stripeSessionId && totalPrice > 0) {
+          await paymentsCollection.insertOne({
+            bookingId,
+            eventId: new ObjectId(eventId),
+            userEmail,
+            amount: totalPrice,
+            quantity: qty,
+            stripeSessionId,
+            status: "paid",
+            createdAt: new Date(),
+          });
+        }
+
+        res.send({ booking: { ...booking, _id: bookingId } });
       } catch (err) {
         console.error("POST /api/bookings error:", err);
         res.status(500).send({ error: err.message });
