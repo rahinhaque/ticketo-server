@@ -335,6 +335,15 @@ async function run() {
       }
     });
 
+    //payments
+    //Get all the payments
+    app.get("/api/payments/:email", async (req, res) => {
+      const {email} = req.params;
+      const cursor = paymentsCollection.find({ userEmail: email });
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
     // Send a ping to confirm a successful connection
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!",
