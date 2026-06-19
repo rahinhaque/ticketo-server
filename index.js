@@ -30,6 +30,7 @@ const client = new MongoClient(uri, {
     strict: true,
     deprecationErrors: true,
   },
+
 });
 
 async function run() {
@@ -168,15 +169,16 @@ async function run() {
       // console.log(data);
       const organizer = await usersCollection.findOne({
         email: data?.organizerEmail,
-      })
-      const organizerEventsCounts = await eventsCollection.countDocuments({organizerEmail: data?.organizerEmail})
+      });
+      const organizerEventsCounts = await eventsCollection.countDocuments({
+        organizerEmail: data?.organizerEmail,
+      });
       // console.log(organizerEventsCounts);
       if (!organizer?.isPremium && organizerEventsCounts >= 3) {
         return res
           .status(403)
           .send({ message: "Your free plan can add only 3 events..." });
       }
-
 
       const result = await eventsCollection.insertOne({
         ...data,
@@ -225,7 +227,7 @@ async function run() {
         console.error("PATCH /api/organizations/:id error:", err);
         res.status(500).send({ error: err.message });
       }
-    })
+    });
 
     //Delete events for specific user api
     app.delete("/api/events/:id", async (req, res) => {
@@ -236,15 +238,74 @@ async function run() {
     });
 
     //making the user premium after payment
-    app.patch("/api/users/upgrade-premium/:email" , async  (req, res)=>{
-      const {email} = req.params;
-      const result = await usersCollection.updateOne({email}, {
-        $set: {
-          isPremium: true
-        }
-      });
+    app.patch("/api/users/upgrade-premium/:email", async (req, res) => {
+      const { email } = req.params;
+      const result = await usersCollection.updateOne(
+        { email },
+        {
+          $set: {
+            isPremium: true,
+          },
+        },
+      );
       res.send(result);
-    } )
+    });
+
+    // add this near your other routes, inside run()
+
+    //Booking api--------------------------------------------------------------------------
+    //Booking api--------------------------------------------------------------------------
+    app.post("/api/bookings", async (req, res) => {
+      try {
+        const {
+          eventId,
+          userEmail,
+          quantity,
+          totalPrice,
+          stripeSessionId,
+          status,
+        } = req.body;
+        const qty = Math.max(1, Number(quantity) || 1);
+
+        if (stripeSessionId) {
+          const existing = await bookingsCollection.findOne({
+            stripeSessionId,
+          });
+          if (existing)
+            return res.send({ booking: existing, alreadyExists: true });
+        }
+
+        const updated = await eventsCollection.findOneAndUpdate(
+          {
+            _id: new ObjectId(eventId),
+            $expr: { $gte: [{ $toInt: "$seats" }, qty] },
+          },
+          [{ $set: { seats: { $subtract: [{ $toInt: "$seats" }, qty] } } }],
+          { returnDocument: "after" },
+        );
+        const eventDoc = updated?.value ?? updated;
+
+        if (!eventDoc) {
+          return res.status(400).send({ error: "Not enough seats available" });
+        }
+
+        const booking = {
+          eventId: new ObjectId(eventId),
+          userEmail,
+          quantity: qty,
+          totalPrice: totalPrice || 0,
+          stripeSessionId: stripeSessionId || null,
+          status: status || "confirmed",
+          createdAt: new Date(),
+        };
+
+        const result = await bookingsCollection.insertOne(booking);
+        res.send({ booking: { ...booking, _id: result.insertedId } });
+      } catch (err) {
+        console.error("POST /api/bookings error:", err);
+        res.status(500).send({ error: err.message });
+      }
+    });
 
     // Send a ping to confirm a successful connection
     console.log(
