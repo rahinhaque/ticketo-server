@@ -239,35 +239,55 @@ async function run() {
 
     //making the user premium after payment
     app.patch("/api/users/upgrade-premium/:email", async (req, res) => {
-      const { email } = req.params;
-      const result = await usersCollection.updateOne(
-        { email },
-        {
-          $set: {
-            isPremium: true,
-          },
-        },
-      );
-      res.send(result);
-    });
+      try {
+        const { email } = req.params;
+        const { stripeSessionId, amount, plan } = req.body;
 
+        if (stripeSessionId) {
+          const existing = await paymentsCollection.findOne({
+            stripeSessionId,
+          });
+          if (existing) {
+            return res.send({ alreadyProcessed: true });
+          }
+        }
+
+        const result = await usersCollection.updateOne(
+          { email },
+          { $set: { isPremium: true } },
+        );
+
+        await paymentsCollection.insertOne({
+          email,
+          type: "organizer-subscription",
+          stripeSessionId: stripeSessionId || null,
+          amount: amount || 0,
+          plan: plan || "premium",
+          status: "paid",
+          createdAt: new Date(),
+        });
+
+        res.send(result);
+      } catch (err) {
+        console.error("PATCH /api/users/upgrade-premium/:email error:", err);
+        res.status(500).send({ error: err.message });
+      }
+    });
     // add this near your other routes, inside run()
 
     //Get bookings
     app.get("/api/bookings/:email", async (req, res) => {
-      const {email} = req.params;
+      const { email } = req.params;
       const cursor = bookingsCollection.find({ userEmail: email });
       const result = await cursor.toArray();
       res.send(result);
     });
-
 
     //Booking api--------------------------------------------------------------------------
     //Booking api--------------------------------------------------------------------------
     app.post("/api/bookings", async (req, res) => {
       try {
         const {
-
           eventId,
           userEmail,
           quantity,
@@ -338,7 +358,7 @@ async function run() {
     //payments
     //Get all the payments
     app.get("/api/payments/:email", async (req, res) => {
-      const {email} = req.params;
+      const { email } = req.params;
       const cursor = paymentsCollection.find({ userEmail: email });
       const result = await cursor.toArray();
       res.send(result);
