@@ -237,6 +237,41 @@ async function run() {
       res.send(result);
     });
 
+    //Get Attendee list for specific event
+    app.get("/api/events/attendees/:id", async (req, res) => {
+      const { id } = req.params;
+      const query = { eventId: id };
+      const result = await bookingsCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    //Get attendee list across all events created by an organizer
+    app.get("/api/organizer/attendees/:email", async (req, res) => {
+      try {
+        const { email } = req.params;
+
+        const organizerEvents = await eventsCollection
+          .find({ organizerEmail: email })
+          .project({ _id: 1 })
+          .toArray();
+
+        const eventIds = organizerEvents.map((event) => event._id);
+
+        if (eventIds.length === 0) {
+          return res.send([]);
+        }
+
+        const result = await bookingsCollection
+          .find({ eventId: { $in: eventIds } })
+          .toArray();
+
+        res.send(result);
+      } catch (err) {
+        console.error("GET /api/organizer/attendees/:email error:", err);
+        res.status(500).send({ error: err.message });
+      }
+    });
+
     //making the user premium after payment
     app.patch("/api/users/upgrade-premium/:email", async (req, res) => {
       try {
